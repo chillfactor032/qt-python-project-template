@@ -3,7 +3,9 @@
 *.dist/
 *.onefile-build/
 *.exe
+version.json
 bin/*
+resources/*
 
 #Backup Files
 *.bak

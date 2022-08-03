@@ -5,8 +5,7 @@ import sys
 import json
 
 
-VERSION_TEMPLATE = """
-{
+VERSION_TEMPLATE = """{
     "version": "<VERSION>",
     "ico": "./resources/img/<ICON>.png",
     "company_name": "<COMPANY_NAME>",
@@ -15,16 +14,14 @@ VERSION_TEMPLATE = """
 }
 """
 
-RESOURCES_TEMPLATE = """
-<!DOCTYPE RCC><RCC version="1.0">
+RESOURCES_TEMPLATE = """<!DOCTYPE RCC><RCC version="1.0">
 <qresource>
     <file>version.json</file>
 </qresource>
 </RCC>
 """
 
-UI_TEMPPLATE = """
-<?xml version="1.0" encoding="UTF-8"?>
+UI_TEMPPLATE = """<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>MainWindow</class>
  <widget class="QMainWindow" name="MainWindow">
@@ -32,8 +29,8 @@ UI_TEMPPLATE = """
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>640</width>
-    <height>480</height>
+    <width>634</width>
+    <height>160</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -53,13 +50,26 @@ UI_TEMPPLATE = """
      <string>UI Template - Replace this file with one from QT Designer</string>
     </property>
    </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>60</y>
+      <width>441</width>
+      <height>41</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Save the ui file to &lt;PROJECT_ROOT&gt;/resources/ui/</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>640</width>
+     <width>634</width>
      <height>22</height>
     </rect>
    </property>
@@ -71,54 +81,27 @@ UI_TEMPPLATE = """
 </ui>
 """
 
-target_env = "windows"
-partial = False
-
-if(len(sys.argv)>1):
-    if(sys.argv[1] == "partial"):
-        partial = True
-
-print("Starting build script")
-if not os.path.exists("version.json"):
-    print("version.json file does not exist. Generating template")
-    print("Complete this template before rerunning")
-    with open("version.json", "w") as f:
-        f.write(VERSION_TEMPLATE)
-    sys.exit(1)
-
-print("Reading Version File: version.json")
-with open("version.json", "r") as version_file:
-    version = json.load(version_file)
-print(f"Company Name: {version['company_name']}")
-print(f"Product Name: {version['product_name']}")
-print(f"Version: {version['version']}")
-print()
-
-TEST_BUILD = False
-PROJECT_NAME = version['product_name'].title().replace(" ","")
-OUTPUT_FILE = f"{PROJECT_NAME}.exe"
-# Specify Paths and Files
-cwd = os.getcwd()
-ui_path = os.path.join(cwd, "resources", "ui")
-destination_file = os.path.join(cwd, "UI_Components.py")
-resource_file = os.path.join(cwd, f"{PROJECT_NAME}.rc")
-
-try:
-    if not os.path.exists("resources"):
-        print("Creating resources directory")
-        os.mkdirs("bin")
-except Exception as e:
-    print("Error creating bin dir")
-    print(e)
-
 def make_dirs(path):
     try:
         if not os.path.exists(path):
             print(f"Creating path {path}")
-            os.mkdirs(path)
+            os.makedirs(path)
     except Exception as e:
         print("Error creating bin dir")
         print(e)
+
+
+# Function to compile the provided ui_file to py
+# and place it in destination_path
+def installRequirements(requirements_file="requirements.txt"):
+    # pip install -r requirements.txt
+    ret = subprocess.run(["py", "-m", "pip", "install", "-r", "requirements.txt"], capture_output=True)
+    if(ret.returncode != 0):
+        print(f"\nError")
+        print(ret.stderr.decode("utf-8"))
+        return False
+    output = ret.stdout.decode("utf-8")
+    return True
 
 # Function to find all files in dir_path 
 # with extension (not recursive)
@@ -136,7 +119,7 @@ def compileUiFile(ui_file, destination_file):
     ret = subprocess.run(["uic", "-g", "python", ui_file], capture_output=True)
     if(ret.returncode != 0):
         print(f"\nError Compiling {ui_file}")
-        print(ret.stderr)
+        print(ret.stderr.decode("utf-8"))
         return False
     output = ret.stdout
     with open(destination_file, "ab") as py_file:
@@ -160,12 +143,65 @@ def compileResources(resources_file, destination_file):
         return False
     return True
 
+
+target_env = "windows"
+partial = False
+
+if(len(sys.argv)>1):
+    if(sys.argv[1] == "partial"):
+        partial = True
+
+print("Starting build script")
+print("=============================================\n")
+if not os.path.exists("version.json"):
+    print("version.json file does not exist. Generating template")
+    print("Complete this template before rerunning")
+    with open("version.json", "w") as f:
+        f.write(VERSION_TEMPLATE)
+    sys.exit(1)
+print("Reading Version File: version.json")
+with open("version.json", "r") as version_file:
+    version = json.load(version_file)
+print(f"Company Name: {version['company_name']}")
+print(f"Product Name: {version['product_name']}")
+print(f"Version: {version['version']}")
+print("=============================================\n")
+TEST_BUILD = False
+PROJECT_NAME = version['product_name'].title().replace(" ","")
+OUTPUT_FILE = f"{PROJECT_NAME}.exe"
+# Specify Paths and Files
+cwd = os.getcwd()
+ui_path = os.path.join(cwd, "resources", "ui")
+destination_file = os.path.join(cwd, "UI_Components.py")
+resource_file = os.path.join(cwd, f"{PROJECT_NAME}.rc")
+
+
+print("Installing Requirements via pip:")
+with open("requirements.txt") as f:
+    r = f.read()
+    print(r)
+
+if installRequirements():
+    print("Packages installed successfully")
+else:
+    print("Error installing packages from requirements.txt")
+    print("Try installing manually 'py -m pip install -r requirements.txt'")
+    sys.exit(1)
+print("=============================================\n")
+
+print("Checking required directories:")
+print("resources/ui")
+print("resources/files")
+print("resources/img")
+print("bin")
+
 # Make sure resources directories exist, create them if not
 make_dirs("resources/ui")
 make_dirs("resources/files")
 make_dirs("resources/img")
 make_dirs("bin")
 
+print("=============================================\n")
 print("Compiling All UI Files to Single Python File")
 print(f"UI File Dir: {ui_path}")
 print(f"Destination Python File: {destination_file}")
@@ -186,19 +222,22 @@ if(os.path.exists(destination_file)):
     os.remove(destination_file)
 print("=============================================\n")
 
+print("Compiling UI Files from ./resources/ui/")
 ui_files = getFilesWithExtension(ui_path, "ui")
 #If no ui files, create the blank one
 if len(ui_files) == 0:
-    with open("template.ui") as f:
+    with open("resources/ui/template.ui", "w") as f:
         f.write(UI_TEMPPLATE)
-    ui_files = ["template.ui"]
+    ui_files = ["resources/ui/template.ui"]
 
 for file in ui_files:
-    print(f"Compiling {file}...", end="")
+    print(f"> Compiling {file}...", end="")
     if(compileUiFile(file, destination_file)):
         print("Success")
     else:
         print("Failure")
+        print("Error compiling UI File. Please fix and rerun.")
+        sys.exit(1)
 
 print("\nUI Files Compiled")
 print("=============================================\n")
@@ -212,7 +251,7 @@ if not os.path.exists("Resources.rc"):
 
 resource_dest = "Resources.py"
 if(compileResources("Resources.rc", resource_dest)):
-    print(f"Compiling Resources File: Resources.rc to {resource_dest}")
+    print(f"> File: Resources.rc to {resource_dest}")
 else:
     print(f"\nError Compiling {resource_file}")
 
