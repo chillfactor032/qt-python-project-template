@@ -6,6 +6,7 @@
 version.json
 bin/*
 resources/*
+UI_Components.py
 
 #Backup Files
 *.bak
@@ -128,3 +129,4 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+Resources.py

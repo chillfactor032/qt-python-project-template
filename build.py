@@ -6,7 +6,7 @@ import json
 
 
 VERSION_TEMPLATE = """{
-    "version": "<VERSION>",
+    "version": "1.0",
     "ico": "./resources/img/<ICON>.png",
     "company_name": "<COMPANY_NAME>",
     "product_name": "<PROJECT_NAME>",
@@ -268,12 +268,17 @@ if(target_env == "windows"):
     show_cmd = "--windows-disable-console "
     if(TEST_BUILD):
         show_cmd = ""
-        
-    cmd = f"py -m nuitka --onefile --standalone " \
-            f"--enable-plugin=pyside6 --windows-icon-from-ico={version['ico']} " \
-            f"{show_cmd}" \
-            f" -o bin/{OUTPUT_FILE} " \
-            "MainWindow.py"
+    
+    icon = f"--windows-icon-from-ico={version['ico']}"
+    if not os.path.exists(version['ico']):
+        icon = ""
+    
+    cmd = f"py -m nuitka --onefile --standalone" \
+            f" --enable-plugin=pyside6 " \
+            f"{icon}" \
+            f" {show_cmd}" \
+            f" -o bin/{OUTPUT_FILE}" \
+            " MainWindow.py"
     
 proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 for c in iter(lambda: proc.stdout.read(1), b''):
