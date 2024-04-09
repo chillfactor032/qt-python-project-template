@@ -28,8 +28,7 @@ VERSION_TEMPLATE = """{
     "company_name": "<COMPANY_NAME>",
     "product_name": "<PROJECT_NAME>",
     "description": "<PROJECT_DESCRIPTION>",
-    "main_script": "MainWindow.py",
-    "executable": "<EXECUTABLE_NAME>"
+    "main_script": "MainWindow.py"
 }
 """
 
@@ -200,8 +199,8 @@ if len(OUTPUT_FILE) == 0:
 # Specify Paths and Files
 cwd = os.getcwd()
 ui_path = os.path.join(cwd, "resources", "ui")
-destination_file = os.path.join(cwd, "UI_Components.py")
-resource_file = os.path.join(cwd, f"{PROJECT_NAME}.rc")
+destination_file = os.path.join(cwd, "ui.py")
+resource_file = os.path.join(cwd, f"Resources.qrc")
 
 
 print("Installing Requirements via pip:")
@@ -227,7 +226,6 @@ print("resources/img")
 make_dirs("resources/ui")
 make_dirs("resources/files")
 make_dirs("resources/img")
-#make_dirs("dist")
 
 print("=============================================\n")
 print("Compiling All UI Files to Single Python File")
@@ -271,15 +269,15 @@ print("\nUI Files Compiled")
 print("=============================================\n")
 print("Compiling Resources")
 
-#Create Resources.rc if it doesn't exist
-if not os.path.exists("Resources.rc"):
-    print("Resources.rc does not exist. Creating it")
-    with open("Resources.rc", "w") as f:
+#Create Resources.qrc if it doesn't exist
+if not os.path.exists(resource_file):
+    print(f"{resource_file} does not exist. Creating it")
+    with open(resource_file, "w") as f:
         f.write(RESOURCES_TEMPLATE)
 
 resource_dest = "Resources.py"
-if(compileResources("Resources.rc", resource_dest)):
-    print(f"> File: Resources.rc to {resource_dest}")
+if(compileResources(resource_file, resource_dest)):
+    print(f"> File: {resource_file} to {resource_dest}")
 else:
     print(f"\nError Compiling {resource_file}")
 
@@ -300,6 +298,9 @@ ICON = version.get("ico", None)
 if ICON is None:
     ICON = ""
 else:
+    if not os.path.isfile(ICON):
+        print(f"Icon file does not exist. Please copy it to path [{ICON}] and retry.")
+        sys.exit(1)
     ICON = f" --icon={ICON}"
 #pyinstaller MainWindow.py -y --clean --onedir -n MyAppTemplate --icon=app.ico
 cmd = f"pyinstaller {MAIN_SCRIPT} -w -y --clean --onefile" \
