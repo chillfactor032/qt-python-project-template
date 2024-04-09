@@ -8,7 +8,7 @@ pyinstaller.log
 # Build-time Project Files
 resources
 Resources.py
-Resources.rc
+Resources.qrc
 version.json
 UI_Components.py
 
