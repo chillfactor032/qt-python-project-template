@@ -3,14 +3,33 @@ import subprocess
 import shutil
 import sys
 import json
+import platform
+import argparse
 
+help = """A build script to build and compile PySide6 applications.
+Default action is to simply build the PySide6 UI components and resources.
+Use --full flag if you want to compile the binary using PyInstaller.
+"""
+
+parser = argparse.ArgumentParser(description=help)
+parser.add_argument("--full", action="store_true", help="Perform full build + compile. Compiled app destination is ./dist")
+
+args = parser.parse_args()
+
+FULL_COMPILE = args.full
+
+# Indentify OS
+# 'Linux', 'Darwin', 'Java', 'Windows'
+OS_PLATFORM = platform.system()
 
 VERSION_TEMPLATE = """{
     "version": "1.0",
     "ico": "./resources/img/<ICON>.png",
     "company_name": "<COMPANY_NAME>",
     "product_name": "<PROJECT_NAME>",
-    "description": "<PROJECT_DESCRIPTION>"
+    "description": "<PROJECT_DESCRIPTION>",
+    "main_script": "MainWindow.py",
+    "executable": "<EXECUTABLE_NAME>"
 }
 """
 
@@ -145,14 +164,16 @@ def compileResources(resources_file, destination_file):
 
 
 target_env = "windows"
-partial = False
-
-if(len(sys.argv)>1):
-    if(sys.argv[1] == "partial"):
-        partial = True
 
 print("Starting build script")
 print("=============================================\n")
+if FULL_COMPILE:
+    print("Full Build + Compile requested. Output will be in ./dist")
+else:
+    print("Full Compile not requested. Only building UI and Resources.")
+
+print(f"Platform Identified: {OS_PLATFORM}")
+
 if not os.path.exists("version.json"):
     print("version.json file does not exist. Generating template")
     print("Complete this template before rerunning")
@@ -162,13 +183,20 @@ if not os.path.exists("version.json"):
 print("Reading Version File: version.json")
 with open("version.json", "r") as version_file:
     version = json.load(version_file)
+MAIN_SCRIPT = version.get("main_script", None)
+if MAIN_SCRIPT is None:
+    print("Missing main_script from version.json! Exiting...")
+    sys.exit(1)
 print(f"Company Name: {version['company_name']}")
 print(f"Product Name: {version['product_name']}")
 print(f"Version: {version['version']}")
 print("=============================================\n")
-TEST_BUILD = False
+
 PROJECT_NAME = version['product_name'].title().replace(" ","")
-OUTPUT_FILE = f"{PROJECT_NAME}.exe"
+OUTPUT_FILE = version.get("executable", "")
+if len(OUTPUT_FILE) == 0:
+    OUTPUT_FILE = PROJECT_NAME
+                          
 # Specify Paths and Files
 cwd = os.getcwd()
 ui_path = os.path.join(cwd, "resources", "ui")
@@ -193,13 +221,13 @@ print("Checking required directories:")
 print("resources/ui")
 print("resources/files")
 print("resources/img")
-print("bin")
+
 
 # Make sure resources directories exist, create them if not
 make_dirs("resources/ui")
 make_dirs("resources/files")
 make_dirs("resources/img")
-make_dirs("bin")
+#make_dirs("dist")
 
 print("=============================================\n")
 print("Compiling All UI Files to Single Python File")
@@ -257,42 +285,40 @@ else:
 
 print("=============================================\n")
 
-if(partial):
-    print("Partial Build Requested. Not Compiling Binary")
+if not FULL_COMPILE:
+    print("Build Only Requested. Not Compiling Binary")
     print("=============================================\n")
     sys.exit(0)
 
 print("Compiling Binary")
 
-if(target_env == "windows"):
-    show_cmd = "--windows-disable-console "
-    if(TEST_BUILD):
-        show_cmd = ""
-    
-    icon = f"--windows-icon-from-ico={version['ico']}"
-    if not os.path.exists(version['ico']):
-        icon = ""
-    
-    cmd = f"py -m nuitka --onefile --standalone" \
-            f" --enable-plugin=pyside6 " \
-            f"{icon}" \
-            f" {show_cmd}" \
-            f" -o bin/{OUTPUT_FILE}" \
-            " MainWindow.py"
-    
-proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-for c in iter(lambda: proc.stdout.read(1), b''):
-    sys.stdout.write(c.decode("utf-8"))
-    
-for c in iter(lambda: proc.stderr.read(1), b''):
-    sys.stdout.write(c.decode("utf-8"))
+# If windows, append exe file ext
+if OS_PLATFORM.lower() == "windows":
+    OUTPUT_FILE += ".exe"
 
-proc.communicate()
+ICON = version.get("ico", None)
+if ICON is None:
+    ICON = ""
+else:
+    ICON = f" --icon={ICON}"
+#pyinstaller MainWindow.py -y --clean --onedir -n MyAppTemplate --icon=app.ico
+cmd = f"pyinstaller {MAIN_SCRIPT} -w -y --clean --onefile" \
+        f" -n {OUTPUT_FILE}" \
+        f"{ICON}"
+
+print("Compiling with command:")
+print(cmd)
+print()
+
+proc = subprocess.run(cmd, shell=True, capture_output=True)
+print(proc.stdout.decode("utf8"))
+print(proc.stderr.decode("utf8"))
+print(f"Return Code: {proc.returncode}")
 
 print("\n=============================================")
 if(proc.returncode == 0):
     print("Binary Compiled Successfully")
-    print(f"./bin/{OUTPUT_FILE}")
+    print(f"./dist/{OUTPUT_FILE}")
 else:
     print("Error Compiling Binary")
 print("=============================================\n")

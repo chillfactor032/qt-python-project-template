@@ -1,11 +1,15 @@
-# Nuitka Files
-*.build/
-*.dist/
-*.onefile-build/
+# PyInstaller Files
 *.exe
+bin
+dist
+build
+pyinstaller.log
+
+# Build-time Project Files
+resources
+Resources.py
+Resources.rc
 version.json
-bin/*
-resources/*
 UI_Components.py
 
 #Backup Files

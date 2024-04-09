@@ -2,6 +2,7 @@
 import sys
 import json
 import os
+import time
 from enum import Enum
 
 # PySide6 Imports
@@ -10,6 +11,7 @@ from PySide6.QtCore import QSettings, QFile, QTextStream, QStandardPaths
 from PySide6.QtGui import QPixmap, QIcon
 import Resources
 from UI_Components import Ui_MainWindow
+
 
 #Log Levels
 class LogLevel(Enum):
