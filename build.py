@@ -22,6 +22,15 @@ FULL_COMPILE = args.full
 # 'Linux', 'Darwin', 'Java', 'Windows'
 OS_PLATFORM = platform.system()
 
+PYTHON_BIN = "py"
+UIC_BIN = "uic"
+RCC_BIN = "rcc"
+
+if OS_PLATFORM == 'Linux':
+    PYTHON_BIN = "python3"
+    UIC_BIN = "pyside6-uic"
+    RCC_BIN = "pyside6-rcc"
+    
 VERSION_TEMPLATE = """{
     "version": "1.0",
     "ico": "./resources/img/<ICON>.png",
@@ -138,7 +147,7 @@ def generateQRC(dest_qrc_path, src_dir):
 # and place it in destination_path
 def installRequirements(requirements_file="requirements.txt"):
     # pip install -r requirements.txt
-    ret = subprocess.run(["py", "-m", "pip", "install", "-r", "requirements.txt"], capture_output=True)
+    ret = subprocess.run([PYTHON_BIN, "-m", "pip", "install", "-r", "requirements.txt"], capture_output=True)
     if(ret.returncode != 0):
         print(f"\nError")
         print(ret.stderr.decode("utf-8"))
@@ -159,7 +168,7 @@ def getFilesWithExtension(dir_path,  extension):
 # and place it in destination_path
 def compileUiFile(ui_file, destination_file):
     # uic -g python $ui_file >> destination_file
-    ret = subprocess.run(["uic", "-g", "python", ui_file], capture_output=True)
+    ret = subprocess.run([UIC_BIN, "-g", "python", ui_file], capture_output=True)
     if(ret.returncode != 0):
         print(f"\nError Compiling {ui_file}")
         print(ret.stderr.decode("utf-8"))
@@ -179,7 +188,7 @@ def compileResources(resources_file, destination_file):
             pass
 
     #rcc -g python -o Resources.py {PROJECT_NAME}.rc
-    ret = subprocess.run(["rcc", "-g", "python", "-o", destination_file, resources_file], capture_output=True)
+    ret = subprocess.run([RCC_BIN, "-g", "python", "-o", destination_file, resources_file], capture_output=True)
     stderr = ret.stderr.decode("utf-8")
     if(ret.returncode != 0):
         print(stderr)
